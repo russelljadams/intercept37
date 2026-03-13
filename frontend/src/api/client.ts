@@ -27,17 +27,17 @@ export async function fetchRequests(filters: RequestFilters = {}): Promise<Pagin
   if (filters.status) params.set('status', String(filters.status));
   if (filters.search) params.set('search', filters.search);
   const { data } = await api.get(`/requests?${params.toString()}`);
-  return data;
+  return data.results || data;
 }
 
 export async function fetchRequestDetail(id: number): Promise<ProxyRequest> {
   const { data } = await api.get(`/requests/${id}`);
-  return data;
+  return data.results || data;
 }
 
 export async function repeatRequest(id: number): Promise<ProxyRequest> {
   const { data } = await api.post(`/requests/${id}/repeat`);
-  return data;
+  return data.results || data;
 }
 
 export async function tagRequest(id: number, tags: string[]): Promise<void> {
@@ -50,13 +50,13 @@ export async function noteRequest(id: number, note: string): Promise<void> {
 
 export async function fetchStats(): Promise<Stats> {
   const { data } = await api.get('/stats');
-  return data;
+  return data.results || data;
 }
 
 export async function fetchScanResults(severity?: string): Promise<ScanResult[]> {
   const params = severity ? `?severity=${severity}` : '';
   const { data } = await api.get(`/scan-results${params}`);
-  return data;
+  return data.results || data;
 }
 
 export async function sendManualRequest(req: {
@@ -66,7 +66,7 @@ export async function sendManualRequest(req: {
   body: string;
 }): Promise<ProxyRequest> {
   const { data } = await api.post('/requests/send', req);
-  return data;
+  return data.results || data;
 }
 
 export default api;
