@@ -123,7 +123,7 @@ async def repeat_request(request_id: int, db: Session = Depends(get_db)):
     if req.query:
         url += f"?{req.query}"
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with httpx.AsyncClient(verify=False, proxy="http://127.0.0.1:8080") as client:
         resp = await client.request(
             method=req.method,
             url=url,
@@ -215,7 +215,7 @@ async def send_request(req: dict):
     import httpx
 
     headers = req.get("headers", {})
-    async with httpx.AsyncClient(verify=False) as client:
+    async with httpx.AsyncClient(verify=False, proxy="http://127.0.0.1:8080") as client:
         resp = await client.request(
             method=req.get("method", "GET"),
             url=req["url"],

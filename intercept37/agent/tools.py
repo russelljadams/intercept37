@@ -22,6 +22,10 @@ logger = logging.getLogger("intercept37.agent.tools")
 # Max chars returned for large text fields to keep tool results manageable.
 _BODY_LIMIT = 2000
 
+# All outbound requests route through the intercept37 proxy so traffic
+# gets captured in the dashboard automatically.
+_PROXY_URL = "http://127.0.0.1:8080"
+
 
 def _truncate(text: Optional[str], limit: int = _BODY_LIMIT) -> str:
     if not text:
@@ -134,7 +138,7 @@ async def _repeat_request(request_id: int) -> dict:
         if req.query:
             url += f"?{req.query}"
 
-        async with httpx.AsyncClient(verify=False, timeout=30) as client:
+        async with httpx.AsyncClient(verify=False, timeout=30, proxy=_PROXY_URL) as client:
             resp = await client.request(
                 method=req.method,
                 url=url,
@@ -157,7 +161,7 @@ async def _send_request(
     headers: Optional[dict] = None,
     body: Optional[str] = None,
 ) -> dict:
-    async with httpx.AsyncClient(verify=False, timeout=30) as client:
+    async with httpx.AsyncClient(verify=False, timeout=30, proxy=_PROXY_URL) as client:
         resp = await client.request(
             method=method.upper(),
             url=url,
@@ -403,7 +407,7 @@ async def _crawl_target(
     to_visit: list[tuple[str, int]] = [(url, 0)]
     base_host = urlparse(url).hostname
 
-    async with httpx.AsyncClient(verify=False, timeout=15, follow_redirects=True) as client:
+    async with httpx.AsyncClient(verify=False, timeout=15, follow_redirects=True, proxy=_PROXY_URL) as client:
         while to_visit and len(visited) < max_pages:
             current_url, current_depth = to_visit.pop(0)
 
