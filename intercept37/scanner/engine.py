@@ -534,7 +534,18 @@ class HeaderSecurityCheck(BaseCheck):
     description = "Checks response headers for missing security controls (passive, no injection)."
     severity = "low"
 
+    # Track which hosts have already been checked to avoid duplicate findings
+    _checked_hosts: set[str] = set()
+
+    @classmethod
+    def reset_checked_hosts(cls):
+        cls._checked_hosts = set()
+
     async def check(self, request: ParsedRequest, client: httpx.AsyncClient) -> list[Finding]:
+        # Only run header checks once per host
+        if request.host in self._checked_hosts:
+            return []
+        self._checked_hosts.add(request.host)
         findings: list[Finding] = []
         headers = {k.lower(): v for k, v in request.response_headers.items()}
 

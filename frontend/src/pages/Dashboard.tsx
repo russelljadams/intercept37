@@ -127,22 +127,39 @@ function HostsDrillDown({ onClose }: { onClose: () => void }) {
 
 function VulnsDrillDown({ onClose }: { onClose: () => void }) {
   const [severity, setSeverity] = useState('');
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedTitle, setExpandedTitle] = useState<string | null>(null);
   const { data: results, loading } = useScanResults(severity || undefined);
 
-  const severityCounts = results.reduce((acc, r) => {
-    acc[r.severity] = (acc[r.severity] || 0) + 1;
+  // Group by title to deduplicate
+  interface VulnGroup { title: string; severity: string; description: string; evidence: string; count: number; request_ids: number[]; instances: typeof results; }
+  const grouped: VulnGroup[] = [];
+  const seen = new Map<string, VulnGroup>();
+  for (const r of results) {
+    const key = r.title;
+    if (seen.has(key)) {
+      const g = seen.get(key)!;
+      g.count++;
+      if (!g.request_ids.includes(r.request_id)) g.request_ids.push(r.request_id);
+      g.instances.push(r);
+    } else {
+      const g: VulnGroup = { title: r.title, severity: r.severity, description: r.description, evidence: r.evidence, count: 1, request_ids: [r.request_id], instances: [r] };
+      seen.set(key, g);
+      grouped.push(g);
+    }
+  }
+
+  const severityCounts = grouped.reduce((acc, g) => {
+    acc[g.severity] = (acc[g.severity] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   return (
-    <DrillDown title={`Vulnerabilities (${results.length})`} accent="red" onClose={onClose}>
-      {/* Severity filter pills */}
+    <DrillDown title={`Vulnerabilities (${grouped.length} unique, ${results.length} total)`} accent="red" onClose={onClose}>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <button onClick={() => setSeverity('')}
           className={`px-2 py-1 rounded text-[10px] uppercase tracking-wider border transition-colors ${
             !severity ? 'border-alien-red/50 text-alien-red bg-alien-red/10' : 'border-alien-border text-alien-text-dim hover:text-alien-text'
-          }`}>All ({results.length})</button>
+          }`}>All ({grouped.length})</button>
         {['critical', 'high', 'medium', 'low', 'info'].map((s) => (
           <button key={s} onClick={() => setSeverity(severity === s ? '' : s)}
             className={`transition-all flex items-center gap-1 ${severity === s ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}>
@@ -152,42 +169,52 @@ function VulnsDrillDown({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
-      {loading ? <div className="text-alien-text-dim text-xs text-center py-8">Loading...</div> : results.length === 0 ? (
+      {loading ? <div className="text-alien-text-dim text-xs text-center py-8">Loading...</div> : grouped.length === 0 ? (
         <div className="text-alien-text-dim text-xs text-center py-8">No vulnerabilities{severity ? ` with severity: ${severity}` : ''}.</div>
       ) : (
         <div className="space-y-2">
-          {results.map((result) => {
-            const isExpanded = expandedId === result.id;
+          {grouped.map((group) => {
+            const isExpanded = expandedTitle === group.title;
             return (
-              <div key={result.id}
+              <div key={group.title}
                 className={`bg-alien-panel border rounded-lg transition-all cursor-pointer ${
                   isExpanded ? 'border-alien-red/30' : 'border-alien-border/40 hover:border-alien-red/20'
                 }`}>
-                <div className="flex items-center gap-2 sm:gap-3 p-3" onClick={() => setExpandedId(isExpanded ? null : result.id)}>
-                  <SeverityBadge severity={result.severity} />
+                <div className="flex items-center gap-2 sm:gap-3 p-3" onClick={() => setExpandedTitle(isExpanded ? null : group.title)}>
+                  <SeverityBadge severity={group.severity} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-alien-text text-xs font-medium">{result.title}</div>
-                    <div className="text-alien-text-dim text-[10px] truncate mt-0.5">{result.url}</div>
+                    <div className="text-alien-text text-xs font-medium">{group.title}</div>
+                    {group.count > 1 && (
+                      <div className="text-alien-text-dim text-[10px] mt-0.5">Affects {group.count} requests across {group.request_ids.length} endpoints</div>
+                    )}
                   </div>
+                  {group.count > 1 && (
+                    <span className="text-alien-red/80 text-[10px] bg-alien-red/10 border border-alien-red/20 rounded px-1.5 py-0.5">{group.count}x</span>
+                  )}
                   <span className={`text-alien-text-dim text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}>&gt;</span>
                 </div>
                 {isExpanded && (
                   <div className="border-t border-alien-border p-3 space-y-3 animate-slide-in">
                     <div>
                       <h4 className="text-alien-red text-[10px] uppercase tracking-wider mb-1">Description</h4>
-                      <p className="text-alien-text text-xs leading-relaxed">{result.description}</p>
+                      <p className="text-alien-text text-xs leading-relaxed">{group.description}</p>
                     </div>
-                    {result.evidence && (
+                    {group.evidence && (
                       <div>
                         <h4 className="text-alien-red text-[10px] uppercase tracking-wider mb-1">Evidence</h4>
-                        <pre className="bg-alien-black border border-alien-border rounded p-2 text-[10px] text-alien-cyan whitespace-pre-wrap break-all overflow-auto max-h-40">{result.evidence}</pre>
+                        <pre className="bg-alien-black border border-alien-border rounded p-2 text-[10px] text-alien-cyan whitespace-pre-wrap break-all overflow-auto max-h-40">{group.evidence}</pre>
                       </div>
                     )}
-                    <div className="flex flex-wrap items-center gap-3 text-[10px] text-alien-text-dim">
-                      {result.parameter && <span>Param: <span className="text-alien-cyan">{result.parameter}</span></span>}
-                      <span>Request: <span className="text-alien-text">#{result.request_id}</span></span>
-                      <span>{new Date(result.timestamp).toLocaleString()}</span>
-                    </div>
+                    {group.count > 1 && (
+                      <div>
+                        <h4 className="text-alien-red text-[10px] uppercase tracking-wider mb-1">Affected Requests ({group.count})</h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {group.request_ids.map((rid) => (
+                            <span key={rid} className="text-[10px] text-alien-text bg-alien-black border border-alien-border rounded px-1.5 py-0.5">#{rid}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
