@@ -21,6 +21,7 @@ dependencies = [
     "click>=8.0",
     "httpx>=0.27",
     "anthropic>=0.40",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,9 @@ dev = [
 
 [project.scripts]
 intercept37 = "intercept37.cli:main"
+breach37 = "intercept37.brute.cli:breach_cli"
+recon37 = "intercept37.postexploit.cli:recon_cli"
+venom37 = "intercept37.shells.cli:venom_cli"
 
 [tool.ruff]
 target-version = "py311"
