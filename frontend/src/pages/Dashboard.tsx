@@ -16,9 +16,9 @@ function StatCard({ label, value, accent = 'green' }: { label: string; value: st
     yellow: 'text-alien-yellow',
   };
   return (
-    <div className={`bg-alien-panel border ${borderMap[accent]} rounded-lg p-5 animate-glow-pulse`}>
-      <div className="text-alien-text-dim text-[10px] uppercase tracking-[0.2em] mb-2">{label}</div>
-      <div className={`${textMap[accent]} text-3xl font-bold glow-text`}>{value}</div>
+    <div className={`bg-alien-panel border ${borderMap[accent]} rounded-lg p-3 sm:p-5 animate-glow-pulse`}>
+      <div className="text-alien-text-dim text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] mb-1 sm:mb-2">{label}</div>
+      <div className={`${textMap[accent]} text-xl sm:text-3xl font-bold glow-text`}>{value}</div>
     </div>
   );
 }
@@ -42,19 +42,19 @@ export default function Dashboard() {
   const maxMethodCount = Math.max(...methodEntries.map(([, v]) => v), 1);
 
   return (
-    <div className="space-y-6 animate-slide-in">
+    <div className="space-y-4 sm:space-y-6 animate-slide-in">
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <StatCard label="Total Requests" value={s.total_requests} accent="green" />
         <StatCard label="Unique Hosts" value={s.unique_hosts} accent="cyan" />
         <StatCard label="Vulnerabilities" value={s.vulnerabilities_found} accent="red" />
-        <StatCard label="Active Connections" value={s.active_connections} accent="yellow" />
+        <StatCard label="Connections" value={s.active_connections} accent="yellow" />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Method Distribution */}
-        <div className="bg-alien-panel border border-alien-border rounded-lg p-5">
-          <h3 className="text-alien-green text-xs uppercase tracking-[0.15em] mb-4">Method Distribution</h3>
+        <div className="bg-alien-panel border border-alien-border rounded-lg p-3 sm:p-5">
+          <h3 className="text-alien-green text-xs uppercase tracking-[0.15em] mb-3 sm:mb-4">Method Distribution</h3>
           {loading && !stats ? (
             <div className="text-alien-text-dim text-xs">Loading...</div>
           ) : methodEntries.length === 0 ? (
@@ -78,42 +78,58 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Requests */}
-        <div className="col-span-2 bg-alien-panel border border-alien-border rounded-lg p-5">
-          <h3 className="text-alien-green text-xs uppercase tracking-[0.15em] mb-4">Recent Requests</h3>
+        <div className="lg:col-span-2 bg-alien-panel border border-alien-border rounded-lg p-3 sm:p-5">
+          <h3 className="text-alien-green text-xs uppercase tracking-[0.15em] mb-3 sm:mb-4">Recent Requests</h3>
           {loading && !stats ? (
             <div className="text-alien-text-dim text-xs">Loading...</div>
           ) : s.recent_requests.length === 0 ? (
             <div className="text-alien-text-dim text-xs">
-              No intercepted requests yet. Start the proxy and browse to capture traffic.
+              No intercepted requests yet. Configure your proxy to capture traffic.
             </div>
           ) : (
-            <div className="space-y-1">
-              <div className="grid grid-cols-[60px_1fr_80px_60px_100px] gap-2 text-[10px] text-alien-text-dim uppercase tracking-wider pb-2 border-b border-alien-border">
-                <span>Method</span>
-                <span>URL</span>
-                <span>Host</span>
-                <span>Status</span>
-                <span>Time</span>
+            <div className="space-y-1 overflow-x-auto">
+              {/* Mobile: card layout */}
+              <div className="sm:hidden space-y-2">
+                {s.recent_requests.slice(0, 10).map((req) => (
+                  <div key={req.id} className="bg-alien-black/50 rounded p-2 border border-alien-border/30">
+                    <div className="flex items-center gap-2 mb-1">
+                      <MethodBadge method={req.method} />
+                      <StatusBadge code={req.status_code} />
+                      <span className="text-alien-text-dim text-[10px] ml-auto">{req.response_time}ms</span>
+                    </div>
+                    <div className="text-alien-text text-[11px] truncate">{req.host}{req.path}</div>
+                  </div>
+                ))}
               </div>
-              {s.recent_requests.slice(0, 10).map((req) => (
-                <div
-                  key={req.id}
-                  className="grid grid-cols-[60px_1fr_80px_60px_100px] gap-2 py-1.5 text-xs border-b border-alien-border/30 hover:bg-alien-green/5 transition-colors"
-                >
-                  <MethodBadge method={req.method} />
-                  <span className="text-alien-text truncate">{req.path}</span>
-                  <span className="text-alien-text-dim truncate">{req.host}</span>
-                  <StatusBadge code={req.status_code} />
-                  <span className="text-alien-text-dim">{req.response_time}ms</span>
+              {/* Desktop: table layout */}
+              <div className="hidden sm:block">
+                <div className="grid grid-cols-[60px_1fr_80px_60px_100px] gap-2 text-[10px] text-alien-text-dim uppercase tracking-wider pb-2 border-b border-alien-border">
+                  <span>Method</span>
+                  <span>URL</span>
+                  <span>Host</span>
+                  <span>Status</span>
+                  <span>Time</span>
                 </div>
-              ))}
+                {s.recent_requests.slice(0, 10).map((req) => (
+                  <div
+                    key={req.id}
+                    className="grid grid-cols-[60px_1fr_80px_60px_100px] gap-2 py-1.5 text-xs border-b border-alien-border/30 hover:bg-alien-green/5 transition-colors"
+                  >
+                    <MethodBadge method={req.method} />
+                    <span className="text-alien-text truncate">{req.path}</span>
+                    <span className="text-alien-text-dim truncate">{req.host}</span>
+                    <StatusBadge code={req.status_code} />
+                    <span className="text-alien-text-dim">{req.response_time}ms</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ASCII art divider */}
-      <div className="text-center text-alien-green/20 text-[8px] select-none py-2">
+      {/* ASCII art divider — hidden on mobile */}
+      <div className="hidden sm:block text-center text-alien-green/20 text-[8px] select-none py-2">
         {'='.repeat(80)}<br />
         {'// INTERCEPT37 :: ALIEN INTERCEPTOR :: PROXY ACTIVE //'}<br />
         {'='.repeat(80)}

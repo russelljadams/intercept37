@@ -29,9 +29,7 @@ export default function RequestInspector({ requestId, onClose }: Props) {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
         <div className="bg-alien-panel border border-alien-red/40 rounded p-6">
           <p className="text-alien-red">{error || 'Not found'}</p>
-          <button onClick={onClose} className="mt-4 text-alien-text-dim hover:text-alien-green text-xs">
-            Close
-          </button>
+          <button onClick={onClose} className="mt-4 text-alien-text-dim hover:text-alien-green text-xs">Close</button>
         </div>
       </div>
     );
@@ -78,31 +76,27 @@ export default function RequestInspector({ requestId, onClose }: Props) {
 
   const formatBody = (body: string) => {
     if (!body) return '(empty)';
-    try {
-      return JSON.stringify(JSON.parse(body), null, 2);
-    } catch {
-      return body;
-    }
+    try { return JSON.stringify(JSON.parse(body), null, 2); } catch { return body; }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-alien-dark border border-alien-border rounded-lg w-[900px] max-h-[85vh] flex flex-col animate-slide-in glow-border"
+        className="bg-alien-dark border border-alien-border rounded-t-lg sm:rounded-lg w-full sm:w-[900px] max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-slide-in glow-border"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-alien-border">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-alien-border">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <MethodBadge method={req.method} />
-            <span className="text-alien-text text-sm truncate max-w-[500px]">{req.url}</span>
+            <span className="text-alien-text text-xs sm:text-sm truncate">{req.url}</span>
             <StatusBadge code={req.status_code} />
           </div>
           <button
             onClick={onClose}
-            className="text-alien-text-dim hover:text-alien-red text-lg font-bold w-8 h-8 flex items-center justify-center"
+            className="text-alien-text-dim hover:text-alien-red text-lg font-bold w-8 h-8 flex items-center justify-center flex-shrink-0 ml-2"
           >
-            x
+            ×
           </button>
         </div>
 
@@ -112,7 +106,7 @@ export default function RequestInspector({ requestId, onClose }: Props) {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-6 py-2 text-xs uppercase tracking-wider border-b-2 transition-colors ${
+              className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 text-xs uppercase tracking-wider border-b-2 transition-colors ${
                 tab === t
                   ? 'border-alien-green text-alien-green'
                   : 'border-transparent text-alien-text-dim hover:text-alien-text'
@@ -124,24 +118,24 @@ export default function RequestInspector({ requestId, onClose }: Props) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4 space-y-4">
+        <div className="flex-1 overflow-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
           {tab === 'request' ? (
             <>
               <div>
                 <h3 className="text-alien-green text-xs uppercase tracking-wider mb-2">URL</h3>
-                <div className="bg-alien-black rounded p-3 text-sm text-alien-text border border-alien-border break-all">
+                <div className="bg-alien-black rounded p-2 sm:p-3 text-xs sm:text-sm text-alien-text border border-alien-border break-all">
                   {req.method} {req.url}
                 </div>
               </div>
               <div>
                 <h3 className="text-alien-green text-xs uppercase tracking-wider mb-2">Headers</h3>
-                <pre className="bg-alien-black rounded p-3 text-xs text-alien-text-dim border border-alien-border whitespace-pre-wrap">
+                <pre className="bg-alien-black rounded p-2 sm:p-3 text-[10px] sm:text-xs text-alien-text-dim border border-alien-border whitespace-pre-wrap break-all">
                   {formatHeaders(req.request_headers)}
                 </pre>
               </div>
               <div>
                 <h3 className="text-alien-green text-xs uppercase tracking-wider mb-2">Body</h3>
-                <pre className="bg-alien-black rounded p-3 text-xs text-alien-cyan border border-alien-border whitespace-pre-wrap max-h-60 overflow-auto">
+                <pre className="bg-alien-black rounded p-2 sm:p-3 text-[10px] sm:text-xs text-alien-cyan border border-alien-border whitespace-pre-wrap max-h-48 sm:max-h-60 overflow-auto break-all">
                   {formatBody(req.request_body)}
                 </pre>
               </div>
@@ -150,19 +144,19 @@ export default function RequestInspector({ requestId, onClose }: Props) {
             <>
               <div>
                 <h3 className="text-alien-green text-xs uppercase tracking-wider mb-2">Status</h3>
-                <div className="bg-alien-black rounded p-3 text-sm border border-alien-border">
+                <div className="bg-alien-black rounded p-2 sm:p-3 text-sm border border-alien-border">
                   <StatusBadge code={req.status_code} />
                 </div>
               </div>
               <div>
                 <h3 className="text-alien-green text-xs uppercase tracking-wider mb-2">Headers</h3>
-                <pre className="bg-alien-black rounded p-3 text-xs text-alien-text-dim border border-alien-border whitespace-pre-wrap">
+                <pre className="bg-alien-black rounded p-2 sm:p-3 text-[10px] sm:text-xs text-alien-text-dim border border-alien-border whitespace-pre-wrap break-all">
                   {formatHeaders(req.response_headers)}
                 </pre>
               </div>
               <div>
                 <h3 className="text-alien-green text-xs uppercase tracking-wider mb-2">Body</h3>
-                <pre className="bg-alien-black rounded p-3 text-xs text-alien-cyan border border-alien-border whitespace-pre-wrap max-h-60 overflow-auto">
+                <pre className="bg-alien-black rounded p-2 sm:p-3 text-[10px] sm:text-xs text-alien-cyan border border-alien-border whitespace-pre-wrap max-h-48 sm:max-h-60 overflow-auto break-all">
                   {formatBody(req.response_body)}
                 </pre>
               </div>
@@ -171,11 +165,9 @@ export default function RequestInspector({ requestId, onClose }: Props) {
         </div>
 
         {/* Actions */}
-        <div className="p-4 border-t border-alien-border space-y-3">
-          {message && (
-            <div className="text-alien-green text-xs animate-flicker">{message}</div>
-          )}
-          <div className="flex items-center gap-3">
+        <div className="p-3 sm:p-4 border-t border-alien-border space-y-2 sm:space-y-3">
+          {message && <div className="text-alien-green text-xs animate-flicker">{message}</div>}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <button
               onClick={handleRepeat}
               disabled={repeating}

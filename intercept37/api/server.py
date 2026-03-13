@@ -20,6 +20,10 @@ app.include_router(llm_router)
 
 # Scanner routes
 from intercept37.api.scanner_routes import router as scanner_router
+
+# Chat agent routes
+from intercept37.api.chat_routes import router as chat_router
+app.include_router(chat_router)
 app.include_router(scanner_router)
 
 app.add_middleware(

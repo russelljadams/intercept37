@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Traffic from './pages/Traffic';
 import Repeater from './pages/Repeater';
 import Scanner from './pages/Scanner';
+import Agent from './pages/Agent';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="traffic" element={<Traffic />} />
         <Route path="repeater" element={<Repeater />} />
         <Route path="scanner" element={<Scanner />} />
+        <Route path="agent" element={<Agent />} />
       </Route>
     </Routes>
   );

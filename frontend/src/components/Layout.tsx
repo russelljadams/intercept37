@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 
@@ -6,6 +7,7 @@ const navItems = [
   { to: '/traffic', label: 'Traffic', icon: '#' },
   { to: '/repeater', label: 'Repeater', icon: '~' },
   { to: '/scanner', label: 'Scanner', icon: '!' },
+  { to: '/agent', label: 'Agent', icon: '@' },
 ];
 
 const LOGO_ASCII = `
@@ -17,14 +19,27 @@ const LOGO_ASCII = `
 
 export default function Layout() {
   const { connected } = useWebSocket();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-alien-black scanline-bg">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 border-r border-alien-border bg-alien-dark flex flex-col">
+      <aside
+        className={`fixed md:static z-40 h-full w-56 flex-shrink-0 border-r border-alien-border bg-alien-dark flex flex-col transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
         {/* Logo */}
         <div className="p-4 border-b border-alien-border">
-          <pre className="text-alien-green text-[6px] leading-[7px] glow-text font-mono select-none">
+          <pre className="text-alien-green text-[5px] sm:text-[6px] leading-[6px] sm:leading-[7px] glow-text font-mono select-none">
             {LOGO_ASCII}
           </pre>
         </div>
@@ -36,6 +51,7 @@ export default function Layout() {
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-2.5 mx-2 rounded text-sm transition-all duration-200 ${
                   isActive
@@ -61,16 +77,23 @@ export default function Layout() {
       </aside>
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top bar */}
-        <header className="h-10 flex-shrink-0 border-b border-alien-border bg-alien-dark flex items-center justify-between px-4">
-          <div className="flex items-center gap-4">
-            <span className="text-alien-text-dim text-xs tracking-widest uppercase">
+        <header className="h-10 flex-shrink-0 border-b border-alien-border bg-alien-dark flex items-center justify-between px-3 sm:px-4">
+          <div className="flex items-center gap-3">
+            {/* Hamburger for mobile */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden text-alien-green text-lg leading-none"
+            >
+              &#9776;
+            </button>
+            <span className="text-alien-text-dim text-[10px] sm:text-xs tracking-widest uppercase">
               Proxy Interface
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-xs">
               <div
                 className={`w-2 h-2 rounded-full ${
                   connected
@@ -79,17 +102,17 @@ export default function Layout() {
                 }`}
               />
               <span className={connected ? 'text-alien-green' : 'text-alien-red'}>
-                {connected ? 'CONNECTED' : 'DISCONNECTED'}
+                {connected ? 'LIVE' : 'OFF'}
               </span>
             </div>
-            <span className="text-alien-text-dim text-xs">
+            <span className="text-alien-text-dim text-[10px] hidden sm:inline">
               localhost:1337
             </span>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto p-4 grid-bg">
+        <main className="flex-1 overflow-auto p-2 sm:p-4 grid-bg">
           <Outlet />
         </main>
       </div>
