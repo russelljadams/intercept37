@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1a1a2e #0a0a0f;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #1a1a2e;
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #00ff4140;
+}
+
+::selection {
+  background: rgba(0, 255, 65, 0.2);
+  color: #00ff41;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+@layer utilities {
+  .glow-text {
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5), 0 0 20px rgba(0, 255, 65, 0.3);
+  }
+  .glow-text-cyan {
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+  }
+  .glow-border {
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.3), inset 0 0 8px rgba(0, 255, 65, 0.05);
+  }
+  .scanline-bg {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 65, 0.015) 2px,
+        rgba(0, 255, 65, 0.015) 4px
+      );
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}

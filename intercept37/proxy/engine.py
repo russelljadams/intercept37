@@ -6,10 +6,10 @@ import logging
 from typing import Optional, Callable
 from mitmproxy import options, http
 from mitmproxy.tools.dump import DumpMaster
-from probe37.db import SessionLocal, init_db
-from probe37.models import CapturedRequest
+from intercept37.db import SessionLocal, init_db
+from intercept37.models import CapturedRequest
 
-logger = logging.getLogger("probe37.proxy")
+logger = logging.getLogger("intercept37.proxy")
 
 
 class ProxyAddon:

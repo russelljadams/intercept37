@@ -2,9 +2,9 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from probe37.models import Base
+from intercept37.models import Base
 
-DB_PATH = os.environ.get("PROBE37_DB", "probe37_data.db")
+DB_PATH = os.environ.get("PROBE37_DB", "intercept37_data.db")
 engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
 SessionLocal = sessionmaker(bind=engine)
 

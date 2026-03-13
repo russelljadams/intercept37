@@ -38,7 +38,7 @@ class CapturedRequest(Base):
             "port": self.port,
             "path": self.path,
             "query": self.query,
-            "url": f"{self.scheme}://{self.host}{self.path}{? + self.query if self.query else }",
+            "url": f"{self.scheme}://{self.host}{self.path}{"?" + self.query if self.query else ""}",
             "request_headers": self.request_headers,
             "request_body": self.request_body,
             "status_code": self.status_code,

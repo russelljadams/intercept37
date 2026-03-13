@@ -7,12 +7,20 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from probe37.db import get_db, init_db
-from probe37.models import CapturedRequest, ScanResult
+from intercept37.db import get_db, init_db
+from intercept37.models import CapturedRequest, ScanResult
 
-logger = logging.getLogger("probe37.api")
+logger = logging.getLogger("intercept37.api")
 
-app = FastAPI(title="probe37", version="0.1.0", description="Pentest suite API")
+app = FastAPI(title="intercept37", version="0.1.0", description="Pentest suite API")
+
+# LLM analysis routes
+from intercept37.api.llm_routes import router as llm_router
+app.include_router(llm_router)
+
+# Scanner routes
+from intercept37.api.scanner_routes import router as scanner_router
+app.include_router(scanner_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,7 +40,7 @@ class ConnectionManager:
         self.active.append(ws)
 
     def disconnect(self, ws: WebSocket):
-        self.active = [c for c in self.active if c \!= ws]
+        self.active = [c for c in self.active if c != ws]
 
     async def broadcast(self, data: dict):
         dead = []
@@ -82,7 +90,7 @@ def list_requests(
         )
     total = q.count()
     results = q.offset(offset).limit(limit).all()
-    return {"total": total, "requests": [r.to_dict() for r in results]}
+    return {"total": total, "data": [r.to_dict() for r in results], "offset": offset, "limit": limit}
 
 
 @app.get("/api/requests/{request_id}")
@@ -178,13 +186,44 @@ def get_stats(db: Session = Depends(get_db)):
     )
     vulns = db.query(ScanResult).count()
 
+    recent = (
+        db.query(CapturedRequest)
+        .order_by(CapturedRequest.id.desc())
+        .limit(10)
+        .all()
+    )
+
     return {
         "total_requests": total,
-        "by_method": by_method,
-        "unique_hosts": [h[0] for h in hosts],
-        "total_vulns": vulns,
+        "unique_hosts": len([h[0] for h in hosts]),
+        "vulnerabilities_found": vulns,
+        "active_connections": len(ws_manager.active),
+        "method_distribution": by_method,
+        "recent_requests": [r.to_dict() for r in recent],
     }
 
+
+
+
+@app.post("/api/requests/send")
+async def send_request(req: dict):
+    """Send a manual request (repeater)."""
+    import httpx
+
+    headers = req.get("headers", {})
+    async with httpx.AsyncClient(verify=False) as client:
+        resp = await client.request(
+            method=req.get("method", "GET"),
+            url=req["url"],
+            headers=headers,
+            content=req.get("body", None),
+        )
+    return {
+        "status_code": resp.status_code,
+        "headers": dict(resp.headers),
+        "body": resp.text,
+        "response_time": resp.elapsed.total_seconds(),
+    }
 
 # --- WebSocket ---
 
@@ -200,3 +239,22 @@ async def websocket_endpoint(ws: WebSocket):
                 await ws.send_json({"type": "pong"})
     except WebSocketDisconnect:
         ws_manager.disconnect(ws)
+
+
+# --- Static file serving for dashboard ---
+import os
+from pathlib import Path
+from fastapi.responses import FileResponse
+
+FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    """Serve the React dashboard (SPA fallback)."""
+    file_path = FRONTEND_DIR / full_path
+    if file_path.is_file():
+        return FileResponse(file_path)
+    index = FRONTEND_DIR / "index.html"
+    if index.is_file():
+        return FileResponse(index)
+    return {"message": "intercept37 API running. Build frontend with: cd frontend && npm run build"}
