@@ -8,11 +8,18 @@ export interface ToolCall {
   status: 'running' | 'done' | 'error';
 }
 
+// A content block is either text or a tool call, in sequence
+export interface ContentBlock {
+  type: 'text' | 'tool';
+  text?: string;
+  tool?: ToolCall;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
-  toolCalls?: ToolCall[];
+  content: string; // raw text for user messages
+  blocks: ContentBlock[]; // interleaved blocks for assistant messages
   timestamp: Date;
 }
 
@@ -45,6 +52,8 @@ export function useAgentChat(): UseAgentChatReturn {
     setMessages([]);
     setIsStreaming(false);
     sessionIdRef.current = generateId();
+    // Also clear on backend
+    fetch(`/api/chat/${sessionIdRef.current}`, { method: 'DELETE' }).catch(() => {});
   }, []);
 
   const sendMessage = useCallback((text: string) => {
@@ -55,6 +64,7 @@ export function useAgentChat(): UseAgentChatReturn {
       id: generateId(),
       role: 'user',
       content: trimmed,
+      blocks: [],
       timestamp: new Date(),
     };
 
@@ -63,7 +73,7 @@ export function useAgentChat(): UseAgentChatReturn {
       id: assistantId,
       role: 'assistant',
       content: '',
-      toolCalls: [],
+      blocks: [],
       timestamp: new Date(),
     };
 
@@ -102,7 +112,7 @@ export function useAgentChat(): UseAgentChatReturn {
             const trimmedLine = line.trim();
             if (!trimmedLine.startsWith('data: ')) continue;
 
-            let event: { type: string; content?: string; id?: string; name?: string; input?: Record<string, unknown>; tool_call_id?: string; result?: unknown; error?: string };
+            let event: Record<string, unknown>;
             try {
               event = JSON.parse(trimmedLine.slice(6));
             } catch {
@@ -111,45 +121,54 @@ export function useAgentChat(): UseAgentChatReturn {
 
             if (event.type === 'text') {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + (event.content ?? '') }
-                    : m
-                )
+                prev.map((m) => {
+                  if (m.id !== assistantId) return m;
+                  const blocks = [...m.blocks];
+                  const last = blocks[blocks.length - 1];
+                  // Append to existing text block or create new one
+                  if (last && last.type === 'text') {
+                    blocks[blocks.length - 1] = { ...last, text: (last.text ?? '') + (event.content as string ?? '') };
+                  } else {
+                    blocks.push({ type: 'text', text: event.content as string ?? '' });
+                  }
+                  return { ...m, blocks };
+                })
               );
             } else if (event.type === 'tool_use') {
               const toolCall: ToolCall = {
-                id: event.id ?? generateId(),
-                name: event.name ?? 'unknown',
-                input: event.input ?? {},
+                id: (event.id as string) ?? generateId(),
+                name: (event.name as string) ?? 'unknown',
+                input: (event.input as Record<string, unknown>) ?? {},
                 status: 'running',
               };
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, toolCalls: [...(m.toolCalls ?? []), toolCall] }
-                    : m
-                )
+                prev.map((m) => {
+                  if (m.id !== assistantId) return m;
+                  return { ...m, blocks: [...m.blocks, { type: 'tool', tool: toolCall }] };
+                })
               );
             } else if (event.type === 'tool_result') {
               setMessages((prev) =>
                 prev.map((m) => {
                   if (m.id !== assistantId) return m;
-                  const calls = (m.toolCalls ?? []).map((tc) =>
-                    tc.id === event.tool_call_id
-                      ? { ...tc, result: event.result, status: 'done' as const }
-                      : tc
-                  );
-                  return { ...m, toolCalls: calls };
+                  const blocks = m.blocks.map((b) => {
+                    if (b.type === 'tool' && b.tool && (b.tool.name === (event.name as string))) {
+                      // Match by name since the backend yields name not id
+                      if (b.tool.status === 'running') {
+                        return { ...b, tool: { ...b.tool, result: event.result, status: 'done' as const } };
+                      }
+                    }
+                    return b;
+                  });
+                  return { ...m, blocks };
                 })
               );
             } else if (event.type === 'error') {
               setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + `\n\n**Error:** ${event.error ?? 'Unknown error'}` }
-                    : m
-                )
+                prev.map((m) => {
+                  if (m.id !== assistantId) return m;
+                  return { ...m, blocks: [...m.blocks, { type: 'text', text: `\n\n**Error:** ${event.content ?? event.error ?? 'Unknown error'}` }] };
+                })
               );
               setIsStreaming(false);
             } else if (event.type === 'done') {
@@ -166,7 +185,7 @@ export function useAgentChat(): UseAgentChatReturn {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? { ...m, content: m.content + `\n\n**Error:** ${errorMsg}` }
+              ? { ...m, blocks: [...m.blocks, { type: 'text' as const, text: `\n\n**Error:** ${errorMsg}` }] }
               : m
           )
         );

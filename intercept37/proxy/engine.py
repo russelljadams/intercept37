@@ -43,7 +43,7 @@ class ProxyAddon:
             "host": req.host,
             "port": req.port,
             "path": req.path,
-            "query": req.query.urlencode() if req.query else None,
+            "query": str(req.query) if req.query else None,
             "request_headers": json.dumps(dict(req.headers)),
             "request_body": req.get_text(strict=False),
             "status_code": resp.status_code if resp else None,
