@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
+import { useWebSocket } from "../hooks/useWebSocket";
+import { useAgentChat } from "../hooks/useAgentChat";
+import ChatPanel from "./ChatPanel";
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: '>' },
-  { to: '/traffic', label: 'Traffic', icon: '#' },
-  { to: '/repeater', label: 'Repeater', icon: '~' },
-  { to: '/scanner', label: 'Scanner', icon: '!' },
-  { to: '/agent', label: 'Agent', icon: '@' },
+  { to: "/", label: "Dashboard", icon: ">" },
+  { to: "/traffic", label: "Traffic", icon: "#" },
+  { to: "/repeater", label: "Repeater", icon: "~" },
+  { to: "/scanner", label: "Scanner", icon: "!" },
 ];
 
 const LOGO_ASCII = `
@@ -20,6 +21,8 @@ const LOGO_ASCII = `
 export default function Layout() {
   const { connected } = useWebSocket();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const agentChat = useAgentChat();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-alien-black scanline-bg">
@@ -34,7 +37,7 @@ export default function Layout() {
       {/* Sidebar */}
       <aside
         className={`fixed md:static z-40 h-full w-56 flex-shrink-0 border-r border-alien-border bg-alien-dark flex flex-col transition-transform duration-200 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Logo */}
@@ -50,13 +53,13 @@ export default function Layout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === "/"}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-2.5 mx-2 rounded text-sm transition-all duration-200 ${
                   isActive
-                    ? 'bg-alien-green/10 text-alien-green glow-border'
-                    : 'text-alien-text-dim hover:text-alien-green hover:bg-alien-green/5'
+                    ? "bg-alien-green/10 text-alien-green glow-border"
+                    : "text-alien-text-dim hover:text-alien-green hover:bg-alien-green/5"
                 }`
               }
             >
@@ -97,12 +100,12 @@ export default function Layout() {
               <div
                 className={`w-2 h-2 rounded-full ${
                   connected
-                    ? 'bg-alien-green shadow-alien animate-glow-pulse'
-                    : 'bg-alien-red shadow-red'
+                    ? "bg-alien-green shadow-alien animate-glow-pulse"
+                    : "bg-alien-red shadow-red"
                 }`}
               />
-              <span className={connected ? 'text-alien-green' : 'text-alien-red'}>
-                {connected ? 'LIVE' : 'OFF'}
+              <span className={connected ? "text-alien-green" : "text-alien-red"}>
+                {connected ? "LIVE" : "OFF"}
               </span>
             </div>
             <span className="text-alien-text-dim text-[10px] hidden sm:inline">
@@ -116,6 +119,27 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating Agent Button */}
+      <button
+        onClick={() => setChatOpen(!chatOpen)}
+        className={`fixed bottom-4 right-4 z-20 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-alien-green/20 border border-alien-green/50 text-alien-green hover:bg-alien-green/30 hover:shadow-alien flex items-center justify-center text-xl sm:text-2xl font-bold transition-all duration-200 ${
+          !chatOpen ? "animate-glow-pulse" : ""
+        }`}
+        aria-label="Toggle Agent chat"
+      >
+        @
+      </button>
+
+      {/* Chat Panel */}
+      <ChatPanel
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        messages={agentChat.messages}
+        isStreaming={agentChat.isStreaming}
+        sendMessage={agentChat.sendMessage}
+        clearSession={agentChat.clearSession}
+      />
     </div>
   );
 }
