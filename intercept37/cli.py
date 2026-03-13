@@ -1,4 +1,6 @@
 """CLI entry point for intercept37."""
+from dotenv import load_dotenv
+load_dotenv()
 import asyncio
 import logging
 import threading

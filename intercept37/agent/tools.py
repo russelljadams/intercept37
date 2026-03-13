@@ -387,6 +387,64 @@ async def _get_proxy_status() -> dict:
         db.close()
 
 
+
+
+async def _crawl_target(
+    url: str,
+    depth: int = 2,
+    max_pages: int = 20,
+) -> dict:
+    """Spider a target URL, following links to discover pages and endpoints."""
+    from urllib.parse import urljoin, urlparse
+    import re
+
+    visited: set[str] = set()
+    results: list[dict] = []
+    to_visit: list[tuple[str, int]] = [(url, 0)]
+    base_host = urlparse(url).hostname
+
+    async with httpx.AsyncClient(verify=False, timeout=15, follow_redirects=True) as client:
+        while to_visit and len(visited) < max_pages:
+            current_url, current_depth = to_visit.pop(0)
+
+            # Normalize
+            parsed = urlparse(current_url)
+            if parsed.hostname != base_host:
+                continue
+            normalized = f"{parsed.scheme}://{parsed.hostname}{parsed.path}"
+            if normalized in visited:
+                continue
+            visited.add(normalized)
+
+            try:
+                resp = await client.get(current_url)
+                results.append({
+                    "url": current_url,
+                    "status_code": resp.status_code,
+                    "content_type": resp.headers.get("content-type", ""),
+                    "size": len(resp.content),
+                })
+
+                # Extract links if HTML and not too deep
+                if current_depth < depth and "text/html" in resp.headers.get("content-type", ""):
+                    links = re.findall(r'(?:href|src|action)=["\'](.*?)["\'\']', resp.text)
+                    for link in links:
+                        full = urljoin(current_url, link)
+                        full_parsed = urlparse(full)
+                        if full_parsed.hostname == base_host and full_parsed.scheme in ("http", "https"):
+                            clean = f"{full_parsed.scheme}://{full_parsed.hostname}{full_parsed.path}"
+                            if full_parsed.query:
+                                clean += f"?{full_parsed.query}"
+                            if clean not in visited:
+                                to_visit.append((clean, current_depth + 1))
+            except Exception as e:
+                results.append({"url": current_url, "error": str(e)})
+
+    return {
+        "pages_discovered": len(results),
+        "results": results,
+    }
+
 # --------------------------------------------------------------------------
 # Tool registry
 # --------------------------------------------------------------------------
@@ -579,6 +637,20 @@ TOOLS: list[Tool] = [
             "required": [],
         },
         execute=_get_proxy_status,
+    ),
+    Tool(
+        name="crawl_target",
+        description="Spider/crawl a target URL to discover pages, endpoints, and generate traffic through the proxy. Follows links up to a specified depth. Use this to map out a target application.",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "Starting URL to crawl (e.g., https://target.com)"},
+                "depth": {"type": "integer", "description": "How many levels deep to follow links (default 2)", "default": 2},
+                "max_pages": {"type": "integer", "description": "Maximum pages to visit (default 20)", "default": 20},
+            },
+            "required": ["url"],
+        },
+        execute=_crawl_target,
     ),
 ]
 
