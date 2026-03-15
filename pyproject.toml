@@ -36,6 +36,7 @@ intercept37 = "intercept37.cli:main"
 breach37 = "intercept37.brute.cli:breach_cli"
 recon37 = "intercept37.postexploit.cli:recon_cli"
 venom37 = "intercept37.shells.cli:venom_cli"
+c37 = "intercept37.c2.cli:main"
 
 [tool.ruff]
 target-version = "py311"
