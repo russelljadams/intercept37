@@ -3,7 +3,7 @@
 > *"The ships hung in the sky in much the same way that bricks don't."*
 > *These tools hang in your network in much the same way that firewalls wish they wouldn't.*
 
-Five independent, LLM-first offensive security tools. Each installs separately, has zero cross-dependencies, and speaks fluent JSON.
+LLM-first offensive security tools. Each installs separately, has zero cross-dependencies, and speaks fluent JSON.
 
 ---
 
