@@ -61,15 +61,5 @@ def api_only(port: int, host: str):
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 
-# Register tool subcommands
-from intercept37.brute.cli import breach_cli
-from intercept37.postexploit.cli import recon_cli
-from intercept37.shells.cli import venom_cli
-
-main.add_command(breach_cli, "breach")
-main.add_command(recon_cli, "recon")
-main.add_command(venom_cli, "venom")
-
-
 if __name__ == "__main__":
     main()

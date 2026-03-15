@@ -1,6 +1,5 @@
 """Test DNS beacon + redirector."""
 import sys, time, json, socket, urllib.request
-sys.path.insert(0, "/root/projects/intercept37")
 
 print("=" * 60)
 print("  c2-37 v4 — DNS Beacon + Redirector Tests")
@@ -8,7 +7,7 @@ print("=" * 60)
 
 # ── DNS Beacon ──
 print("\n[1] DNS Beacon...")
-from intercept37.c2.dns import DNSBeacon
+from c2_37.dns import DNSBeacon
 
 # Test encoding/decoding
 data = {"id": "abc123", "type": "beacon"}
@@ -67,13 +66,13 @@ else:
 
 # ── Redirector ──
 print("\n[2] Redirector...")
-from intercept37.c2.redirector import (
+from c2_37.redirector import (
     Redirector, generate_iptables_redirector,
     generate_socat_redirector, generate_nginx_redirector
 )
 
 # Start a C2 server first
-from intercept37.c2.server import C2Server
+from c2_37.server import C2Server
 c2 = C2Server(port=18037)
 c2.start(background=True)
 time.sleep(0.3)

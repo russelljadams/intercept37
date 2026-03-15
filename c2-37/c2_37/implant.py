@@ -131,7 +131,7 @@ class Implant:
     def _run_module(self, name: str) -> dict:
         """Run a post-exploitation module inline."""
         try:
-            from intercept37.c2.modules import run_module
+            from c2_37.modules import run_module
             return run_module(name)
         except ImportError:
             # Standalone mode — modules not available, run inline equivalents

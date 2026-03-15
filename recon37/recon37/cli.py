@@ -30,7 +30,7 @@ def recon_cli():
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
 def enum(webshell, ssh, password, key, port, local, checks, human, explain, verbose):
     """Enumerate a target for privesc vectors."""
-    from intercept37.postexploit.engine import PostExploit
+    from recon37.engine import PostExploit
 
     check_list = checks.split(",") if checks else None
 
@@ -60,7 +60,7 @@ def enum(webshell, ssh, password, key, port, local, checks, human, explain, verb
 def list_checks(human):
     """List available enumeration checks."""
     import json
-    from intercept37.postexploit.checks import ENUM_CHECKS
+    from recon37.checks import ENUM_CHECKS
 
     if human:
         click.echo("\n  Available Checks:")

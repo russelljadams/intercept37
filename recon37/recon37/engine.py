@@ -11,7 +11,7 @@ from typing import Literal
 
 import httpx
 
-from intercept37.postexploit.checks import (
+from recon37.checks import (
     ENUM_CHECKS, GTFOBINS_SUID, TEACHING, ALL_CHECKS,
 )
 

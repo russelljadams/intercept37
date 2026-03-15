@@ -3,7 +3,6 @@ import time
 import json
 import urllib.request
 import sys
-sys.path.insert(0, "/root/projects/intercept37")
 
 print("=" * 60)
 print("  c2-37 v2 Integration Test")
@@ -11,7 +10,7 @@ print("=" * 60)
 
 # ── Test 1: Crypto ──
 print("\n[1] Testing crypto module...")
-from intercept37.c2.crypto import derive_key, encrypt, decrypt, encrypt_json, decrypt_json, generate_psk
+from c2_37.crypto import derive_key, encrypt, decrypt, encrypt_json, decrypt_json, generate_psk
 
 psk = generate_psk()
 key = derive_key(psk)
@@ -38,7 +37,7 @@ except ValueError as e:
 
 # ── Test 2: Payloads ──
 print("\n[2] Testing payload generator...")
-from intercept37.c2 import payloads
+from c2_37 import payloads
 
 url = "http://10.10.10.10:8037"
 py = payloads.python_implant(url)
@@ -70,7 +69,7 @@ print(f"    [+] generate_all: {len(all_payloads)} formats")
 
 # ── Test 3: Modules ──
 print("\n[3] Testing post-exploitation modules...")
-from intercept37.c2.modules import list_modules, run_module
+from c2_37.modules import list_modules, run_module
 
 mods = list_modules()
 print(f"    [+] {len(mods)} modules available: {[m['name'] for m in mods]}")
@@ -97,8 +96,8 @@ print(f"    [+] Unknown module error handling OK")
 
 # ── Test 4: Server + Agent full loop ──
 print("\n[4] Testing server + agent loop...")
-from intercept37.c2.server import C2Server
-from intercept37.c2.implant import Implant
+from c2_37.server import C2Server
+from c2_37.implant import Implant
 
 server = C2Server(port=8038)
 server.start(background=True)

@@ -38,7 +38,7 @@ def http_form(url, user, wordlist, fail_string, fail_code, fail_redirect, method
               username_field, password_field, concurrency, rate_limit, timeout,
               human, explain, verbose):
     """Brute force a custom HTTP login form."""
-    from intercept37.brute.engine import HttpBrute
+    from breach37.engine import HttpBrute
 
     bruter = HttpBrute(
         url=url, username=user, wordlist=wordlist,
@@ -71,7 +71,7 @@ def http_form(url, user, wordlist, fail_string, fail_code, fail_redirect, method
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
 def wordpress(url, user, wordlist, concurrency, rate_limit, human, explain, verbose):
     """Brute force a WordPress login (auto-configured)."""
-    from intercept37.brute.engine import HttpBrute
+    from breach37.engine import HttpBrute
 
     bruter = HttpBrute(
         url=url, username=user, wordlist=wordlist,
@@ -103,7 +103,7 @@ def wordpress(url, user, wordlist, concurrency, rate_limit, human, explain, verb
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
 def jenkins(url, user, wordlist, concurrency, rate_limit, human, explain, verbose):
     """Brute force a Jenkins login (auto-configured)."""
-    from intercept37.brute.engine import HttpBrute
+    from breach37.engine import HttpBrute
 
     bruter = HttpBrute(
         url=url, username=user, wordlist=wordlist,
@@ -128,7 +128,7 @@ def jenkins(url, user, wordlist, concurrency, rate_limit, human, explain, verbos
 @click.option("--human", is_flag=True, help="Human-readable output")
 def list_presets(human):
     """List available login form presets."""
-    from intercept37.brute.presets import PRESETS, WORDLIST_PATHS
+    from breach37.presets import PRESETS, WORDLIST_PATHS
 
     data = {
         "presets": {k: {"description": v["description"], "login_path": v["login_path"]}

@@ -3,8 +3,8 @@ import time
 import json
 import urllib.request
 
-from intercept37.c2.server import C2Server
-from intercept37.c2.implant import Implant
+from c2_37.server import C2Server
+from c2_37.implant import Implant
 
 # Start server
 server = C2Server(port=8037)

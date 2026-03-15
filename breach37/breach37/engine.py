@@ -11,7 +11,7 @@ from typing import AsyncIterator
 
 import httpx
 
-from intercept37.brute.presets import PRESETS, resolve_wordlist
+from breach37.presets import PRESETS, resolve_wordlist
 
 
 @dataclass
